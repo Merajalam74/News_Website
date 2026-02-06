@@ -41,7 +41,7 @@ const formatArticles = (articles) => {
 export const fetchNews = async (category = "general") => {
   try {
     const response = await fetch(
-      `${BASE_URL}/top-headlines?country=us&category=${category}&pageSize=20&apiKey=${API_KEY}`
+      `${BASE_URL}country=us&category=${category}&pageSize=20&apiKey=${API_KEY}`
     );
     const data = await response.json();
     return formatArticles(data.articles || []);
@@ -54,7 +54,7 @@ export const fetchNews = async (category = "general") => {
 export const searchNews = async (query) => {
   try {
     const response = await fetch(
-      `${BASE_URL}/everything?q=${query}&sortBy=relevancy&pageSize=20&apiKey=${API_KEY}`
+      `${BASE_URL}country=us&category=${category}&apiKey=${API_KEY}`
     );
     const data = await response.json();
     return formatArticles(data.articles || []);
