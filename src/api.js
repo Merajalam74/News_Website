@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-const BASE_URL = import.meta.env.VITE_NEWS_BASE_URL;
+const BASE_URL = import.meta.env.VITE_NEWS_BASE_URL; 
 
 const generateFullContent = (title, source) => {
   return `
@@ -18,33 +18,41 @@ const generateFullContent = (title, source) => {
     <p class="mb-4">We will continue to follow this story as it develops. For the complete, original coverage, please visit the source link below.</p>
   `;
 };
-
-// --- FORMATTER ---
 const formatArticles = (articles) => {
   return articles.map((article, index) => {
-    const image = article.urlToImage || `https://source.unsplash.com/800x600/?news,${index}`;
-    
+    const image = article.image_url || `https://source.unsplash.com/800x600/?news,${index}`;
+    const authorName = article.creator ? article.creator.join(', ') : "Daily News Team";
+    const originalUrl = article.link;
+
     return {
-      id: `${Date.now()}-${index}`,
+      id: article.article_id || `${Date.now()}-${index}`,
       title: article.title,
       excerpt: article.description || "Click to read the full story coverage.",
-      content: (article.content ? article.content.split('[')[0] : "") + generateFullContent(article.title, article.source.name),
+      content: (article.content ? article.content.slice(0, 200) + "..." : "") + generateFullContent(article.title, article.source_id),
       image: image,
-      date: new Date(article.publishedAt).toLocaleDateString(),
-      author: article.author || "Daily News Team",
-      url: article.url,
-      source: article.source.name
+      date: new Date(article.pubDate).toLocaleDateString(),
+      author: authorName,
+      url: originalUrl,
+      source: article.source_id
     };
-  }).filter(art => art.title !== "[Removed]");
+  }).filter(art => art.title && art.title !== "[Removed]");
 };
 
-export const fetchNews = async (category = "general") => {
+export const fetchNews = async (category = "top") => {
+  const validCategory = (category === "general" || category === "home") ? "top" : category;
+
   try {
     const response = await fetch(
-      `${BASE_URL}country=us&category=${category}&pageSize=20&apiKey=${API_KEY}`
+      `${BASE_URL}country=us&category=${validCategory}&size=10&apiKey=${API_KEY}`
     );
+    
+    if (!response.ok) {
+        console.error(`API Error: ${response.status} ${response.statusText}`);
+        return [];
+    }
+
     const data = await response.json();
-    return formatArticles(data.articles || []);
+    return formatArticles(data.results || []);
   } catch (error) {
     console.error("Error fetching news:", error);
     return [];
@@ -54,10 +62,16 @@ export const fetchNews = async (category = "general") => {
 export const searchNews = async (query) => {
   try {
     const response = await fetch(
-      `${BASE_URL}country=us&category=${category}&apiKey=${API_KEY}`
+      `${BASE_URL}country=us&q=${encodeURIComponent(query)}&apiKey=${API_KEY}`
     );
+    
+    if (!response.ok) {
+        console.error(`Search API Error: ${response.status}`);
+        return [];
+    }
+
     const data = await response.json();
-    return formatArticles(data.articles || []);
+    return formatArticles(data.results || []);
   } catch (error) {
     console.error("Error searching news:", error);
     return [];
